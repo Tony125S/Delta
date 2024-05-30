@@ -1,0 +1,34 @@
+import java.io.FileWriter;
+import java.io.IOException;
+import com.github.javafaker.Faker;
+import com.github.javafaker.repeating.Repeating;
+import com.github.javafaker.service.RandomService;
+
+public class MyClass {
+    private String name;
+    private int age;
+    // Add other fields as needed
+
+    // Constructors, getters, setters, etc.
+
+    public static void main(String[] args) {
+        Faker faker = new Faker();
+        RandomService randomService = new RandomService();
+        Repeating repeating = new Repeating(randomService);
+
+        MyClass myObject = new MyClass();
+        myObject.setName(faker.name().fullName());
+        myObject.setAge(faker.number().numberBetween(18, 60));
+        // Set other fields as needed
+
+        String jsonString = repeating.array(1, 1, myObject).toString();
+
+        // Write JSON string to a file
+        try (FileWriter fileWriter = new FileWriter("output.json")) {
+            fileWriter.write(jsonString);
+            System.out.println("JSON data has been written to output.json");
+        } catch (IOException e) {
+            System.err.println("Error writing JSON data to file: " + e.getMessage());
+        }
+    }
+}
