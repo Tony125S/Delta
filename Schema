@@ -1,0 +1,94 @@
+import io.swagger.v3.parser.OpenAPIV3Parser;
+import io.swagger.v3.parser.core.models.ParseOptions;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.PathItem;
+import io.swagger.v3.oas.models.Paths;
+import io.swagger.v3.oas.models.media.Schema;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.responses.ApiResponse;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class OASParser {
+
+    public OpenAPI parseOAS(String filePath) {
+        OpenAPIV3Parser parser = new OpenAPIV3Parser();
+        ParseOptions options = new ParseOptions();
+        options.setResolve(true);
+        return parser.read(filePath, null, options);
+    }
+
+    public Map<String, Object> extractApiDetails(OpenAPI openAPI) {
+        Map<String, Object> apiDetails = new HashMap<>();
+
+        Paths paths = openAPI.getPaths();
+        for (Map.Entry<String, PathItem> entry : paths.entrySet()) {
+            String endpoint = entry.getKey();
+            PathItem pathItem = entry.getValue();
+
+            Map<String, Object> endpointDetails = new HashMap<>();
+            pathItem.readOperationsMap().forEach((httpMethod, operation) -> {
+                Map<String, Object> methodDetails = new HashMap<>();
+                methodDetails.put("summary", operation.getSummary());
+                methodDetails.put("description", operation.getDescription());
+
+                List<Parameter> parameters = operation.getParameters();
+                methodDetails.put("parameters", parameters);
+
+                Map<String, ApiResponse> responses = operation.getResponses();
+                methodDetails.put("responses", responses);
+
+                endpointDetails.put(httpMethod.toString(), methodDetails);
+            });
+
+            apiDetails.put(endpoint, endpointDetails);
+        }
+
+        return apiDetails;
+    }
+
+    public Map<String, Schema<?>> extractApiSchemas(OpenAPI openAPI) {
+        Map<String, Schema<?>> apiSchemas = new HashMap<>();
+
+        Paths paths = openAPI.getPaths();
+        for (Map.Entry<String, PathItem> entry : paths.entrySet()) {
+            String endpoint = entry.getKey();
+            PathItem pathItem = entry.getValue();
+
+            pathItem.readOperationsMap().forEach((httpMethod, operation) -> {
+                if (operation.getRequestBody() != null) {
+                    operation.getRequestBody().getContent().forEach((mediaType, content) -> {
+                        Schema<?> schema = content.getSchema();
+                        apiSchemas.put(endpoint + ":" + httpMethod, schema);
+                    });
+                }
+            });
+        }
+
+        return apiSchemas;
+    }
+
+    public static void main(String[] args) {
+        OASParser parser = new OASParser();
+        OpenAPI openAPI = parser.parseOAS("path/to/your/openapi.yaml");
+
+        Map<String, Object> apiDetails = parser.extractApiDetails(openAPI);
+        Map<String, Schema<?>> apiSchemas = parser.extractApiSchemas(openAPI);
+
+        PayloadGenerator payloadGenerator = new PayloadGenerator(parser);
+
+        apiSchemas.forEach((endpoint, schema) -> {
+            try {
+                String validPayload = payloadGenerator.generateValidPayload(schema);
+                String invalidPayload = payloadGenerator.generateInvalidPayload(schema);
+                System.out.println("Endpoint: " + endpoint);
+                System.out.println("Valid Payload: " + validPayload);
+                System.out.println("Invalid Payload: " + invalidPayload);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+}
