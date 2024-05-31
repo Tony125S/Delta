@@ -1,0 +1,31 @@
+package com.example.pojo;
+
+public enum DayOfWeek {
+    MONDAY("Monday"),
+    TUESDAY("Tuesday"),
+    WEDNESDAY("Wednesday"),
+    THURSDAY("Thursday"),
+    FRIDAY("Friday"),
+    SATURDAY("Saturday"),
+    SUNDAY("Sunday");
+
+    private final String value;
+
+    DayOfWeek(String value) {
+        this.value = value;
+    }
+
+    @Override
+    public String toString() {
+        return this.value;
+    }
+
+    public static DayOfWeek fromValue(String value) {
+        for (DayOfWeek day : DayOfWeek.values()) {
+            if (day.value.equals(value)) {
+                return day;
+            }
+        }
+        throw new IllegalArgumentException("Unknown enum type " + value);
+    }
+}
