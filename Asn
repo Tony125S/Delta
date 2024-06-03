@@ -1,0 +1,75 @@
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.media.*;
+import io.swagger.v3.parser.OpenAPIV3Parser;
+
+import java.util.Map;
+
+public class SampleRequestBodyGenerator {
+
+    public static void main(String[] args) {
+        try {
+            // Parse the OpenAPI YAML file
+            OpenAPI openAPI = new OpenAPIV3Parser().read("path/to/your/openapi.yaml");
+
+            // Assume you want to generate a sample for a specific path and operation
+            String path = "/your/path";
+            String operation = "post"; // or "get", "put", etc.
+
+            // Get the request body schema
+            Schema<?> schema = openAPI.getPaths()
+                                      .get(path)
+                                      .getPost() // or getGet(), getPut(), etc.
+                                      .getRequestBody()
+                                      .getContent()
+                                      .get("application/json")
+                                      .getSchema();
+
+            // Generate a sample request body
+            Object sampleRequestBody = generateSample(schema);
+
+            // Print the sample request body as JSON
+            ObjectMapper objectMapper = new ObjectMapper();
+            objectMapper.enable(SerializationFeature.INDENT_OUTPUT);
+            String jsonString = objectMapper.writeValueAsString(sampleRequestBody);
+            System.out.println(jsonString);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static Object generateSample(Schema<?> schema) {
+        if (schema instanceof ObjectSchema) {
+            return generateSampleForObjectSchema((ObjectSchema) schema);
+        } else if (schema instanceof ArraySchema) {
+            return generateSampleForArraySchema((ArraySchema) schema);
+        } else if (schema instanceof IntegerSchema) {
+            return 0;
+        } else if (schema instanceof NumberSchema) {
+            return 0.0;
+        } else if (schema instanceof BooleanSchema) {
+            return false;
+        } else if (schema instanceof StringSchema) {
+            return "sample";
+        }
+        return null;
+    }
+
+    private static Object generateSampleForObjectSchema(ObjectSchema schema) {
+        Map<String, Schema> properties = schema.getProperties();
+        Map<String, Object> sampleObject = new java.util.LinkedHashMap<>();
+        for (Map.Entry<String, Schema> entry : properties.entrySet()) {
+            sampleObject.put(entry.getKey(), generateSample(entry.getValue()));
+        }
+        return sampleObject;
+    }
+
+    private static Object generateSampleForArraySchema(ArraySchema schema) {
+        java.util.List<Object> sampleList = new java.util.ArrayList<>();
+        Schema<?> itemsSchema = schema.getItems();
+        sampleList.add(generateSample(itemsSchema));
+        return sampleList;
+    }
+}
