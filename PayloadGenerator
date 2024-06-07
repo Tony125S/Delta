@@ -1,0 +1,73 @@
+package org.example;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import io.swagger.v3.oas.models.media.*;
+import com.github.javafaker.Faker;
+import java.util.*;
+import org.example.CSVReaderExample;
+
+import java.util.Map;
+
+public class PayloadGenerator {
+    public static String generatePayload(Map<String, Schema<?>> schema_map) throws JsonProcessingException{
+        Map<String, Object> payload = new HashMap<>();
+        for(Map.Entry<String, Schema<?>> entry: schema_map.entrySet()) {
+            String key = entry.getKey();
+            Schema<?> schema = entry.getValue();
+            String placeHolder = null;
+            int rowNumber = 2;
+            payload.put(key,generatePayload(schema, null, rowNumber));
+        }
+        String JsonPayload = new ObjectMapper().writeValueAsString(payload);
+        return JsonPayload;
+    }
+
+    public static Object generatePayload(Schema<?> schema, String placeHolder, int rowNumber){
+        if(schema instanceof ObjectSchema){
+            ObjectSchema objectSchema = (ObjectSchema) schema;
+            Map<String, Schema> properties = objectSchema.getProperties();
+            Map<String, Object> objectPayload = new HashMap<>();
+            for (Map.Entry<String, Schema> entry: properties.entrySet()){
+                String propertyKey = entry.getKey();
+                placeHolder = propertyKey;
+                Schema<?> propertySchema = entry.getValue();
+                objectPayload.put(propertyKey, generatePayload(propertySchema, placeHolder, rowNumber));
+            }
+            return objectPayload;
+        }
+        else if (schema.getEnum() != null){
+            List<?> EnumValues = schema.getEnum();
+            int randomIndex = Faker.instance().number().numberBetween(0,EnumValues.size() - 1);
+            return EnumValues.get(randomIndex);
+        }
+        else if(schema instanceof  StringSchema){
+            if(CSVReaderExample.getValue(rowNumber,placeHolder)!=null){
+                String val = CSVReaderExample.getValue(rowNumber,placeHolder);
+                System.out.println("found " + val);
+                return val;
+            }
+            return Faker.instance().name().name();
+        }
+        else if(schema instanceof IntegerSchema){
+            return Faker.instance().number().randomNumber();
+        }
+        else if (schema instanceof BooleanSchema) {
+            return Faker.instance().bool().bool();
+        }
+        else if(schema instanceof ArraySchema){
+            ArraySchema arraySchema = (ArraySchema) schema;
+            Schema itemSchems = arraySchema.getItems();
+            int arraySize = Faker.instance().number().numberBetween(arraySchema.getMinItems(), arraySchema.getMaxItems());
+            List<Object> arrayValues = new ArrayList<>();
+            for (int i=0; i<arraySize; i++){
+                arrayValues.add(generatePayload(itemSchems, placeHolder,rowNumber));
+            }
+            return arrayValues;
+        }
+        else  if (schema instanceof JsonSchema){
+            return generatePayload((JsonSchema) schema, placeHolder,rowNumber);
+        }
+        return null;
+    }
+}
