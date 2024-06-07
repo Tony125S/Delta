@@ -1,0 +1,102 @@
+package org.example;
+
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
+
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class CSVReaderExample {
+    public static String getValue( int targetRow, String targetColumnName){
+        String CsvFileName = "C:\\Users\\91724\\IdeaProjects\\PerfTestTool\\src\\main\\resources\\data.csv";
+        try (CSVReader reader = new CSVReader(new FileReader(CsvFileName))) {
+            List<String[]> allRows = reader.readAll(); // Read all rows at once
+
+            if (allRows.isEmpty()) {
+                System.out.println("The CSV file is empty.");
+                return null;
+            }
+
+            // Create a map of column names to indices
+            String[] header = allRows.get(0);
+            Map<String, Integer> columnIndexMap = new HashMap<>();
+            for (int i = 0; i < header.length; i++) {
+                columnIndexMap.put(header[i], i);
+            }
+
+            // Check if the target column exists
+            if (!columnIndexMap.containsKey(targetColumnName)) {
+                System.out.println("Column name not found.");
+                return null;
+            }
+
+            int targetColumnIndex = columnIndexMap.get(targetColumnName);
+
+            // Access the target row and column
+            if (targetRow < allRows.size() - 1) {
+                String[] row = allRows.get(targetRow + 1); // +1 because the first row is the header
+                if (targetColumnIndex < row.length) {
+                    String value = row[targetColumnIndex];
+                    System.out.println("Value at row " + (targetRow + 1) + ", column '" + targetColumnName + "': " + value);
+                    return value==""?null:value;
+                } else {
+                    System.out.println("Column index out of bounds.");
+                    return  null;
+                }
+            } else {
+                System.out.println("Row index out of bounds.");
+                return null;
+            }
+        } catch (IOException | CsvException e) {
+            e.printStackTrace();
+        }
+        return  null;
+    }
+//    public static void main(String[] args) {
+//        String fileName = "C:\\Users\\91724\\IdeaProjects\\PerfTestTool\\src\\main\\resources\\data.csv";
+//        String targetColumnName = "tag"; // Replace with your target column name
+//        int targetRow = 2; // Example: 3rd row (0-based index)
+//
+//        try (CSVReader reader = new CSVReader(new FileReader(fileName))) {
+//            List<String[]> allRows = reader.readAll(); // Read all rows at once
+//
+//            if (allRows.isEmpty()) {
+//                System.out.println("The CSV file is empty.");
+//                return;
+//            }
+//
+//            // Create a map of column names to indices
+//            String[] header = allRows.get(0);
+//            Map<String, Integer> columnIndexMap = new HashMap<>();
+//            for (int i = 0; i < header.length; i++) {
+//                columnIndexMap.put(header[i], i);
+//            }
+//
+//            // Check if the target column exists
+//            if (!columnIndexMap.containsKey(targetColumnName)) {
+//                System.out.println("Column name not found.");
+//                return;
+//            }
+//
+//            int targetColumnIndex = columnIndexMap.get(targetColumnName);
+//
+//            // Access the target row and column
+//            if (targetRow < allRows.size() - 1) {
+//                String[] row = allRows.get(targetRow + 1); // +1 because the first row is the header
+//                if (targetColumnIndex < row.length) {
+//                    String value = row[targetColumnIndex];
+//                    System.out.println("Value at row " + (targetRow + 1) + ", column '" + targetColumnName + "': " + value);
+//                } else {
+//                    System.out.println("Column index out of bounds.");
+//                }
+//            } else {
+//                System.out.println("Row index out of bounds.");
+//            }
+//        } catch (IOException | CsvException e) {
+//            e.printStackTrace();
+//        }
+//    }
+}
