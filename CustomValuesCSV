@@ -1,0 +1,42 @@
+import com.github.javafaker.Faker;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
+
+public class GenericDataGenerator {
+    private static final Faker faker = new Faker();
+    private static final Map<Pattern, Supplier<String>> patternMap = new HashMap<>();
+
+    static {
+        // Add patterns and corresponding data generators
+        patternMap.put(Pattern.compile(".*Address.*", Pattern.CASE_INSENSITIVE), () -> faker.address().fullAddress());
+        patternMap.put(Pattern.compile(".*Name.*", Pattern.CASE_INSENSITIVE), () -> faker.name().fullName());
+        patternMap.put(Pattern.compile(".*Company.*", Pattern.CASE_INSENSITIVE), () -> faker.company().name());
+        patternMap.put(Pattern.compile(".*Email.*", Pattern.CASE_INSENSITIVE), () -> faker.internet().emailAddress());
+        // Add more patterns and generators as needed
+    }
+
+    public static String generateValue(String key) {
+        return patternMap.entrySet().stream()
+            .filter(entry -> entry.getKey().matcher(key).matches())
+            .map(Map.Entry::getValue)
+            .findFirst()
+            .orElse(() -> "Unsupported key: " + key)
+            .get();
+    }
+
+    public static void main(String[] args) {
+        String key = "MyAddress";
+        String value = generateValue(key);
+        System.out.println("Generated Value: " + value);
+
+        key = "EmployeeName";
+        value = generateValue(key);
+        System.out.println("Generated Value: " + value);
+
+        key = "CompanyEmail";
+        value = generateValue(key);
+        System.out.println("Generated Value: " + value);
+    }
+}
